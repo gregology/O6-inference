@@ -14,6 +14,12 @@
 # The optional `dir` field sets the on-disk directory name under
 # /srv/llm/models/. If omitted, the TOML key (id) is used.
 
+[build]
+# Pin llama.cpp to a specific commit. Set to "latest" to track HEAD.
+# b8005 (914dde72b) is the last known build without the Mali Vulkan
+# descriptor set regression (ggml-vulkan.cpp assertion failure).
+llama_cpp_ref = "914dde72b"
+
 [defaults]
 mmap = true
 parallel = 1
@@ -132,25 +138,28 @@ ctx_size = 32768
 extra = { cpu_moe = true }
 
 # ── Gemma 4 ──────────────────────────────────────────────────────
-
-[models.gemma-4-31b]
-repo = "unsloth/gemma-4-31B-it-GGUF"
-file = "gemma-4-31B-it-Q4_K_M.gguf"
-
-[models.gemma-4-31b.profiles.default]
-name = "gemma-4:31b"
-ctx_size = 32768
-gpu_layers = 999
-
-[models.gemma-4-26b-a4b]
-repo = "unsloth/gemma-4-26B-A4B-it-GGUF"
-file = "gemma-4-26B-A4B-it-UD-Q4_K_M.gguf"
-
-[models.gemma-4-26b-a4b.profiles.default]
-name = "gemma-4:26b-a4b"
-ctx_size = 32768
-gpu_layers = 999
-extra = { cpu_moe = true }
+# Disabled: requires llama.cpp build newer than 914dde72b, which has
+# a Vulkan descriptor set regression on Mali G720. Re-enable when
+# the upstream fix lands and llama_cpp_ref is updated.
+#
+# [models.gemma-4-31b]
+# repo = "unsloth/gemma-4-31B-it-GGUF"
+# file = "gemma-4-31B-it-Q4_K_M.gguf"
+#
+# [models.gemma-4-31b.profiles.default]
+# name = "gemma-4:31b"
+# ctx_size = 32768
+# gpu_layers = 999
+#
+# [models.gemma-4-26b-a4b]
+# repo = "unsloth/gemma-4-26B-A4B-it-GGUF"
+# file = "gemma-4-26B-A4B-it-UD-Q4_K_M.gguf"
+#
+# [models.gemma-4-26b-a4b.profiles.default]
+# name = "gemma-4:26b-a4b"
+# ctx_size = 32768
+# gpu_layers = 999
+# extra = { cpu_moe = true }
 
 # ── Qwen 3.5 ────────────────────────────────────────────────────
 

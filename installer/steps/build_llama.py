@@ -14,26 +14,28 @@ class BuildLlamaStep(Step):
     name = "build-llama"
     description = "Build llama.cpp (Vulkan, curl disabled)"
 
+    def _desired_ref(self) -> str:
+        """Return the full commit hash for the desired build."""
+        ref = self.config.llama_cpp_ref
+        if ref == "latest":
+            # Resolve origin's default branch.
+            for branch in ("master", "main"):
+                h = self.sh_output(f"git -C {LLAMA_DIR} rev-parse origin/{branch}")
+                if h:
+                    return h
+            return ""
+        # Pinned ref — resolve to full hash.
+        return self.sh_output(f"git -C {LLAMA_DIR} rev-parse {ref}")
+
     def check(self) -> bool:
         if not SERVER_BIN.exists():
             return False
         if not LLAMA_DIR.exists():
             return False
-        # Fetch latest from upstream.
         self.sh_ok(f"sudo -u llm git -C {LLAMA_DIR} fetch --quiet")
-        # Compare the hash we built against what's available upstream.
         built = BUILD_HASH.read_text().strip() if BUILD_HASH.exists() else ""
-        latest = self.sh_output(
-            f"git -C {LLAMA_DIR} rev-parse origin/"
-            f"$(git -C {LLAMA_DIR} rev-parse --abbrev-ref origin/HEAD | sed 's|origin/||')"
-        )
-        if not latest:
-            # Fallback: try common default branch names.
-            for branch in ("master", "main"):
-                latest = self.sh_output(f"git -C {LLAMA_DIR} rev-parse origin/{branch}")
-                if latest:
-                    break
-        if not built or built != latest:
+        desired = self._desired_ref()
+        if not built or not desired or built != desired:
             return False
         return True
 
@@ -44,7 +46,15 @@ class BuildLlamaStep(Step):
                 f"{LLAMA_DIR}"
             )
         else:
+            self.sh_live(f"sudo -u llm git -C {LLAMA_DIR} fetch --all")
+
+        # Checkout the desired ref.
+        ref = self.config.llama_cpp_ref
+        if ref == "latest":
             self.sh_live(f"sudo -u llm git -C {LLAMA_DIR} pull")
+        else:
+            self.sh(f"sudo -u llm git -C {LLAMA_DIR} checkout {ref}")
+            print(f"   Pinned to {ref}")
 
         # Clean previous build
         if BUILD_DIR.exists():

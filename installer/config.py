@@ -75,6 +75,7 @@ class Config:
     models_toml: Path
     models: list[Model]
     defaults: Defaults
+    llama_cpp_ref: str = "latest"
     prune: bool = False
     dry_run: bool = False
     host: str = "0.0.0.0"
@@ -128,10 +129,14 @@ def load_config(args) -> Config:
             profiles=profiles,
         ))
 
+    build_raw = raw.get("build", {})
+    llama_cpp_ref = build_raw.get("llama_cpp_ref", "latest")
+
     return Config(
         models_toml=toml_path,
         models=models,
         defaults=defaults,
+        llama_cpp_ref=llama_cpp_ref,
         prune=args.prune,
         dry_run=args.dry_run,
         host=args.host,
