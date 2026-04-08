@@ -144,7 +144,7 @@ gpu_layers = 999
 
 [models.gemma-4-26b-a4b]
 repo = "unsloth/gemma-4-26B-A4B-it-GGUF"
-file = "gemma-4-26B-A4B-it-Q4_K_M.gguf"
+file = "gemma-4-26B-A4B-it-UD-Q4_K_M.gguf"
 
 [models.gemma-4-26b-a4b.profiles.default]
 name = "gemma-4:26b-a4b"
