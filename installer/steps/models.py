@@ -41,6 +41,7 @@ class ModelsStep(Step):
             print(f"   Downloading {model.id} from {model.repo} ...")
             model_dir = Path(model.local_dir)
             model_dir.mkdir(parents=True, exist_ok=True)
+            self.sh(f"chown llm:llm {model_dir}")
 
             if model.file:
                 cmd = (
