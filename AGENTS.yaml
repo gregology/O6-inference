@@ -1,0 +1,82 @@
+context:
+  - match: ["models.toml"]
+    on: [edit]
+    when: before
+    content: |
+      models.toml is the single source of truth for model downloads and router
+      configuration. Both installer/steps/models.py (downloads) and
+      installer/steps/router_config.py (generates models.ini) read from it.
+      No model-specific data should exist in Python code.
+
+      Prefer unsloth quantizations (Q4_K_M) when available. Check
+      https://huggingface.co/unsloth before other sources.
+
+      For multi-shard models that exceed 64GB RAM, use `include` instead of
+      `file` and set `large = true`.
+
+  - match: ["installer/steps/*.py"]
+    on: [edit, create]
+    when: before
+    content: |
+      Every step must be idempotent. Implement check() to detect whether the
+      step has already been applied, and run() to apply it. The runner skips
+      steps where check() returns True.
+
+      Use self.sh() for commands that must succeed, self.sh_ok() for probes,
+      self.sh_live() for long-running commands that should stream output.
+
+decisions:
+  - decision: "Zero external Python dependencies for the installer"
+    rationale: |
+      The installer runs via curl-pipe-bash on a fresh Debian system. Adding
+      pip dependencies to the installer itself would require bootstrapping a
+      venv before the installer can start. Using stdlib tomllib (Python 3.11+)
+      for TOML and string formatting for templates keeps the bootstrap to
+      ~30 lines of shell that only needs git and python3.
+    match: ["installer/**/*.py"]
+
+  - decision: "TOML over YAML for model manifest"
+    rationale: |
+      TOML is parsed by stdlib tomllib (Python 3.11+), requiring zero external
+      dependencies. YAML would require PyYAML. The model manifest structure
+      (flat key-value with nested profiles) maps naturally to TOML sections.
+    match: ["models.toml", "installer/config.py"]
+
+  - decision: "Prefer unsloth GGUF quantizations"
+    rationale: |
+      Unsloth provides well-tested Q4_K_M quantizations optimized for
+      constrained hardware. Consistent naming conventions and reliable
+      availability on Hugging Face. The O6's 64GB unified memory makes Q4_K_M
+      the sweet spot — small enough to fit alongside the system, large enough
+      to preserve model quality.
+    match: ["models.toml"]
+
+  - decision: "models.toml as single source of truth"
+    rationale: |
+      Both model downloads and router config generation derive from the same
+      file. This prevents drift between what's downloaded and what's configured.
+      Adding or removing a model is a single edit to one file.
+    match: ["models.toml", "installer/steps/models.py", "installer/steps/router_config.py"]
+
+  - decision: "Idempotent step pattern with check/run"
+    rationale: |
+      The installer is designed to be re-run. Each step's check() method
+      determines whether work is needed. This avoids re-downloading models,
+      re-building llama.cpp, or re-installing packages on subsequent runs.
+      The models step always runs because it needs to diff desired vs installed.
+    match: ["installer/step.py", "installer/steps/*.py"]
+
+  - decision: "Dedicated llm system user"
+    rationale: |
+      The llama-server runs as a non-login system user under /srv/llm. This
+      limits blast radius, keeps model files owned by a single user, and
+      follows the convention of system services not running as root.
+    match: ["installer/steps/user.py", "installer/steps/systemd.py"]
+
+  - decision: "Hardware detection is passive, not prescriptive"
+    rationale: |
+      hardware.py detects what's available (GPU, NPU, Coral, PCIe) but doesn't
+      force configuration changes. Steps query the Hardware dataclass and adapt.
+      This keeps the door open for future extensions (NPU offload, Coral for
+      edge models, discrete GPU) without coupling detection to action.
+    match: ["installer/hardware.py"]

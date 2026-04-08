@@ -1,0 +1,181 @@
+# O6-inference model manifest
+#
+# This file defines which models to download and how to expose them
+# via the llama-server router. Run the installer again after editing
+# to apply changes.
+#
+# Structure:
+#   [models.<id>]           — one entry per GGUF download
+#   [models.<id>.profiles]  — one or more router profiles per model
+#
+# To remove a model: delete its [models.<id>] block and re-run the
+# installer with --prune to also delete the files from disk.
+#
+# The optional `dir` field sets the on-disk directory name under
+# /srv/llm/models/. If omitted, the TOML key (id) is used.
+
+[defaults]
+mmap = true
+parallel = 1
+cache_type_k = "q4_0"
+cache_type_v = "q4_0"
+device = "Vulkan0"
+gpu_layers = "auto"
+ctx_size = 8192
+no_warmup = true
+
+# ── Small / Medium models ────────────────────────────────────────
+
+[models.k2-v2]
+repo = "cturan/K2-V2-Instruct-GGUF"
+file = "k2v2-Q4_K_M.gguf"
+
+[models.k2-v2.profiles.default]
+name = "k2-v2:73b"
+ctx_size = 16384
+
+# ── OLMo ─────────────────────────────────────────────────────────
+
+[models.olmo-3_1-32b-think]
+repo = "unsloth/Olmo-3.1-32B-Think-GGUF"
+file = "Olmo-3.1-32B-Think-Q4_K_M.gguf"
+dir = "olmo-3.1-32b-think"
+
+[models.olmo-3_1-32b-think.profiles.default]
+name = "olmo-3.1-thinking:32b"
+ctx_size = 16384
+
+# ── GLM ──────────────────────────────────────────────────────────
+
+[models.glm-4_7-flash]
+repo = "unsloth/GLM-4.7-Flash-GGUF"
+file = "GLM-4.7-Flash-Q4_K_M.gguf"
+dir = "glm-4.7-flash"
+
+[models.glm-4_7-flash.profiles.gpu]
+name = "glm-4.7-flash:30b"
+ctx_size = 65536
+gpu_layers = 999
+extra = { jinja = true, min_p = 0.01, temp = 0.7, top_p = 1.0 }
+
+[models.glm-4_7-flash.profiles.cpu]
+name = "glm-4.7-flash:30b-cpu"
+ctx_size = 65536
+gpu_layers = 0
+device = "none"
+extra = { jinja = true, min_p = 0.01, temp = 0.7, top_p = 1.0 }
+
+# ── Qwen 3 Next ─────────────────────────────────────────────────
+
+[models.qwen3-next-80b-instruct]
+repo = "unsloth/Qwen3-Next-80B-A3B-Instruct-GGUF"
+file = "Qwen3-Next-80B-A3B-Instruct-Q4_K_M.gguf"
+dir = "qwen3-next-80b-a3b-instruct"
+
+[models.qwen3-next-80b-instruct.profiles.default]
+name = "qwen3-next:80b"
+ctx_size = 32768
+gpu_layers = 30
+extra = { threads = 4 }
+
+[models.qwen3-next-80b-instruct.profiles.gpu]
+name = "qwen3-next:80b-gpu"
+ctx_size = 32768
+gpu_layers = 999
+
+[models.qwen3-next-80b-instruct.profiles.cpu]
+name = "qwen3-next:80b-cpu"
+ctx_size = 32768
+gpu_layers = 0
+device = "none"
+
+[models.qwen3-next-80b-thinking]
+repo = "unsloth/Qwen3-Next-80B-A3B-Thinking-GGUF"
+file = "Qwen3-Next-80B-A3B-Thinking-Q4_K_M.gguf"
+dir = "qwen3-next-80b-a3b-thinking"
+
+[models.qwen3-next-80b-thinking.profiles.default]
+name = "qwen3-next-thinking:80b"
+ctx_size = 32768
+gpu_layers = 30
+extra = { threads = 4 }
+
+# ── Qwen 3 Coder ────────────────────────────────────────────────
+
+[models.qwen3-coder-30b]
+repo = "unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF"
+file = "Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf"
+
+[models.qwen3-coder-30b.profiles.default]
+name = "qwen3-coder:30b"
+ctx_size = 65536
+gpu_layers = 20
+
+[models.qwen3-coder-30b.profiles.gpu]
+name = "qwen3-coder:30b-gpu"
+ctx_size = 65536
+gpu_layers = 999
+
+[models.qwen3-coder-30b.profiles.cpu]
+name = "qwen3-coder:30b-cpu"
+ctx_size = 65536
+gpu_layers = 0
+device = "none"
+
+[models.qwen3-next-coder]
+repo = "unsloth/Qwen3-Coder-Next-GGUF"
+file = "Qwen3-Coder-Next-Q4_K_S.gguf"
+
+[models.qwen3-next-coder.profiles.default]
+name = "qwen3-coder-next:80b"
+ctx_size = 32768
+extra = { cpu_moe = true }
+
+# ── Qwen 3.5 ────────────────────────────────────────────────────
+
+[models.qwen3_5-35b-a3b]
+repo = "unsloth/Qwen3.5-35B-A3B-GGUF"
+file = "Qwen3.5-35B-A3B-Q4_K_M.gguf"
+dir = "qwen-3.5-35b-a3b"
+
+[models.qwen3_5-35b-a3b.profiles.default]
+name = "qwen3.5:35b"
+ctx_size = 65536
+gpu_layers = 999
+extra = { cpu_moe = true }
+
+[models.qwen3_5-27b]
+repo = "unsloth/Qwen3.5-27B-GGUF"
+file = "Qwen3.5-27B-Q4_K_M.gguf"
+dir = "qwen-3.5-27b"
+
+[models.qwen3_5-27b.profiles.default]
+name = "qwen3.5:27b"
+ctx_size = 65536
+gpu_layers = 999
+
+# ── Large models (exceed 64GB, rely on mmap) ─────────────────────
+
+[models.minimax-m2_5]
+repo = "unsloth/MiniMax-M2.5-GGUF"
+include = "Q4_K_M/*"
+large = true
+dir = "minimax-m2.5"
+
+[models.minimax-m2_5.profiles.default]
+name = "minimax-m2.5:229b"
+ctx_size = 32768
+gpu_layers = 999
+extra = { mlock = false, cpu_moe = true, threads = 8, jinja = true }
+
+[models.qwen3_5-397b]
+repo = "unsloth/Qwen3.5-397B-A17B-GGUF"
+include = "Q4_K_M/*"
+large = true
+dir = "qwen-3.5"
+
+[models.qwen3_5-397b.profiles.default]
+name = "qwen3.5:397b"
+ctx_size = 32768
+gpu_layers = 999
+extra = { mlock = false, cpu_moe = true }
