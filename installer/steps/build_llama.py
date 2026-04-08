@@ -7,6 +7,7 @@ from ..step import Step
 LLAMA_DIR = Path("/srv/llm/src/llama.cpp")
 BUILD_DIR = LLAMA_DIR / "build-vulkan"
 SERVER_BIN = BUILD_DIR / "bin" / "llama-server"
+BUILD_HASH = BUILD_DIR / ".build-hash"
 
 
 class BuildLlamaStep(Step):
@@ -16,13 +17,24 @@ class BuildLlamaStep(Step):
     def check(self) -> bool:
         if not SERVER_BIN.exists():
             return False
-        # If there are upstream updates, rebuild is needed.
-        if LLAMA_DIR.exists():
-            self.sh_ok(f"sudo -u llm git -C {LLAMA_DIR} fetch --quiet")
-            local = self.sh_output(f"git -C {LLAMA_DIR} rev-parse HEAD")
-            remote = self.sh_output(f"git -C {LLAMA_DIR} rev-parse @{{u}}")
-            if local and remote and local != remote:
-                return False
+        if not LLAMA_DIR.exists():
+            return False
+        # Fetch latest from upstream.
+        self.sh_ok(f"sudo -u llm git -C {LLAMA_DIR} fetch --quiet")
+        # Compare the hash we built against what's available upstream.
+        built = BUILD_HASH.read_text().strip() if BUILD_HASH.exists() else ""
+        latest = self.sh_output(
+            f"git -C {LLAMA_DIR} rev-parse origin/"
+            f"$(git -C {LLAMA_DIR} rev-parse --abbrev-ref origin/HEAD | sed 's|origin/||')"
+        )
+        if not latest:
+            # Fallback: try common default branch names.
+            for branch in ("master", "main"):
+                latest = self.sh_output(f"git -C {LLAMA_DIR} rev-parse origin/{branch}")
+                if latest:
+                    break
+        if not built or built != latest:
+            return False
         return True
 
     def run(self) -> None:
@@ -47,6 +59,11 @@ class BuildLlamaStep(Step):
             f"-DGGML_VULKAN=ON "
             f"&& cmake --build {BUILD_DIR} -j {nproc}'"
         )
+
+        # Record which commit we built so check() can compare next run.
+        head = self.sh_output(f"git -C {LLAMA_DIR} rev-parse HEAD")
+        if head:
+            BUILD_HASH.write_text(head + "\n")
 
         # Restart the service if it's running so it picks up the new binary.
         if self.sh_ok("systemctl is-active --quiet llama-router.service"):
