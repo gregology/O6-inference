@@ -14,7 +14,16 @@ class BuildLlamaStep(Step):
     description = "Build llama.cpp (Vulkan, curl disabled)"
 
     def check(self) -> bool:
-        return SERVER_BIN.exists()
+        if not SERVER_BIN.exists():
+            return False
+        # If there are upstream updates, rebuild is needed.
+        if LLAMA_DIR.exists():
+            self.sh_ok(f"sudo -u llm git -C {LLAMA_DIR} fetch --quiet")
+            local = self.sh_output(f"git -C {LLAMA_DIR} rev-parse HEAD")
+            remote = self.sh_output(f"git -C {LLAMA_DIR} rev-parse @{{u}}")
+            if local and remote and local != remote:
+                return False
+        return True
 
     def run(self) -> None:
         if not LLAMA_DIR.exists():
@@ -38,3 +47,8 @@ class BuildLlamaStep(Step):
             f"-DGGML_VULKAN=ON "
             f"&& cmake --build {BUILD_DIR} -j {nproc}'"
         )
+
+        # Restart the service if it's running so it picks up the new binary.
+        if self.sh_ok("systemctl is-active --quiet llama-router.service"):
+            self.sh("systemctl restart llama-router.service")
+            print("   Restarted llama-router.service")

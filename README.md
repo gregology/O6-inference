@@ -97,6 +97,21 @@ curl -s http://YOUR_IP:8000/v1/models | jq '.data[].id'
 
 The router loads models on demand. With `--models-max 1`, requesting a different model unloads the current one first.
 
+## Tests
+
+```bash
+# All tests (including HF network checks)
+python3 -m pytest tests/ -v
+
+# Offline only (fast, no network)
+python3 -m pytest tests/test_config.py tests/test_router_config.py -v
+
+# HF manifest validation only
+python3 -m pytest tests/test_huggingface.py -v
+```
+
+The HF tests verify that every repo, file, and include pattern in `models.toml` actually exists on Hugging Face. Run these after editing the manifest to catch typos before deploying.
+
 ## Architecture
 
 ```
