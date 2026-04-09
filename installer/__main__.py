@@ -51,8 +51,11 @@ def main() -> int:
     print(f"\n{'=' * 60}")
     print("  O6-inference installer")
     print(f"{'=' * 60}")
+    ref = config.llama_cpp_ref
+    ref_label = f"{ref} (pinned)" if ref != "latest" else "latest"
     print(f"  Models file : {config.models_toml}")
     print(f"  Models count: {len(config.models)}")
+    print(f"  llama.cpp   : {ref_label}")
     print(f"  GPU device  : {hw.gpu_device or 'none detected'}")
     print(f"  Dry run     : {config.dry_run}")
     print(f"  Prune       : {config.prune}")

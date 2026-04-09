@@ -73,6 +73,29 @@ decisions:
       follows the convention of system services not running as root.
     match: ["installer/steps/user.py", "installer/steps/systemd.py"]
 
+  - decision: "Pin llama.cpp to 914dde72b (b8005)"
+    rationale: |
+      Builds after 914dde72b introduced a Vulkan descriptor set assertion
+      failure on the Mali G720 Immortalis GPU (ggml-vulkan.cpp:6522). The
+      regression is tracked in ggml-org/llama.cpp#21483. Every build between
+      b8005 and HEAD triggers the bug when offloading layers to Vulkan on
+      this GPU. The pin is configured via [build] llama_cpp_ref in models.toml.
+    revisit_when: "ggml-org/llama.cpp#21483 is resolved"
+    match: ["models.toml", "installer/steps/build_llama.py"]
+
+  - decision: "Gemma 4 models excluded"
+    rationale: |
+      The gemma4 architecture was added to llama.cpp at b8637 (PR #21309,
+      Apr 2 2026). Every build that supports gemma4 also has the Mali Vulkan
+      regression (ggml-org/llama.cpp#21483). There is no build that supports
+      both gemma4 and Vulkan on the O6's Mali G720. Gemma 4 models were
+      removed from models.toml rather than kept as commented-out blocks.
+      When the Vulkan fix lands, bump llama_cpp_ref and re-add Gemma 4:
+        gemma-4-31b: unsloth/gemma-4-31B-it-GGUF (gemma-4-31B-it-Q4_K_M.gguf)
+        gemma-4-26b-a4b: unsloth/gemma-4-26B-A4B-it-GGUF (gemma-4-26B-A4B-it-UD-Q4_K_M.gguf)
+    revisit_when: "ggml-org/llama.cpp#21483 is resolved"
+    match: ["models.toml"]
+
   - decision: "Hardware detection is passive, not prescriptive"
     rationale: |
       hardware.py detects what's available (GPU, NPU, Coral, PCIe) but doesn't
