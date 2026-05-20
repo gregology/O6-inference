@@ -137,30 +137,42 @@ name = "qwen3-coder-next:80b"
 ctx_size = 32768
 extra = { cpu_moe = true }
 
-# ── Qwen 3.5 ────────────────────────────────────────────────────
+# ── Qwen 3.6 ────────────────────────────────────────────────────
 
-[models.qwen3_5-35b-a3b]
-repo = "unsloth/Qwen3.5-35B-A3B-GGUF"
-file = "Qwen3.5-35B-A3B-Q4_K_M.gguf"
-dir = "qwen-3.5-35b-a3b"
+[models.qwen3_6-35b-a3b]
+repo = "unsloth/Qwen3.6-35B-A3B-GGUF"
+file = "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf"
+dir = "qwen-3.6-35b-a3b"
 
-[models.qwen3_5-35b-a3b.profiles.default]
-name = "qwen3.5:35b"
+[models.qwen3_6-35b-a3b.profiles.default]
+name = "qwen3.6:35b"
 ctx_size = 65536
 gpu_layers = 999
 extra = { cpu_moe = true }
 
-[models.qwen3_5-27b]
-repo = "unsloth/Qwen3.5-27B-GGUF"
-file = "Qwen3.5-27B-Q4_K_M.gguf"
-dir = "qwen-3.5-27b"
+[models.qwen3_6-27b]
+repo = "unsloth/Qwen3.6-27B-GGUF"
+file = "Qwen3.6-27B-Q4_K_M.gguf"
+dir = "qwen-3.6-27b"
 
-[models.qwen3_5-27b.profiles.default]
-name = "qwen3.5:27b"
+[models.qwen3_6-27b.profiles.default]
+name = "qwen3.6:27b"
 ctx_size = 65536
 gpu_layers = 999
 
 # ── Large models (exceed 64GB, rely on mmap) ─────────────────────
+
+[models.glm-5_1]
+repo = "unsloth/GLM-5.1-GGUF"
+include = "UD-Q4_K_XL/*"
+large = true
+dir = "glm-5.1"
+
+[models.glm-5_1.profiles.default]
+name = "glm-5.1:744b"
+ctx_size = 32768
+gpu_layers = 999
+extra = { mlock = false, cpu_moe = true, threads = 8, jinja = true }
 
 [models.minimax-m2_5]
 repo = "unsloth/MiniMax-M2.5-GGUF"
