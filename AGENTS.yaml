@@ -75,25 +75,31 @@ decisions:
 
   - decision: "Pin llama.cpp to 914dde72b (b8005)"
     rationale: |
-      Builds after 914dde72b introduced a Vulkan descriptor set assertion
-      failure on the Mali G720 Immortalis GPU (ggml-vulkan.cpp:6522). The
-      regression is tracked in ggml-org/llama.cpp#21483. Every build between
-      b8005 and HEAD triggers the bug when offloading layers to Vulkan on
-      this GPU. The pin is configured via [build] llama_cpp_ref in models.toml.
-    revisit_when: "ggml-org/llama.cpp#21483 is resolved"
+      Builds after 914dde72b have two confirmed bugs on the O6's Mali G720
+      Immortalis GPU:
+        1. GGML_ASSERT(descriptor_set_idx < descriptor_sets.size()) crash in
+           ggml_vk_dispatch_pipeline — triggers even with -ngl 0 on UMA
+           devices; no workaround found (ggml-org/llama.cpp#23057).
+        2. MUL_MAT produces incorrect results across all data types on
+           Mali-G720 Vulkan; 167/860 backend-ops tests fail
+           (ggml-org/llama.cpp#23241).
+      Both issues are confirmed on the CIX CP8180 SoC (same GPU IP as the
+      O6) running Debian aarch64 on recent HEAD commits. The pin is
+      configured via [build] llama_cpp_ref in models.toml.
+    revisit_when: "ggml-org/llama.cpp#23057 and #23241 are both resolved"
     match: ["models.toml", "installer/steps/build_llama.py"]
 
   - decision: "Gemma 4 models excluded"
     rationale: |
       The gemma4 architecture was added to llama.cpp at b8637 (PR #21309,
       Apr 2 2026). Every build that supports gemma4 also has the Mali Vulkan
-      regression (ggml-org/llama.cpp#21483). There is no build that supports
-      both gemma4 and Vulkan on the O6's Mali G720. Gemma 4 models were
-      removed from models.toml rather than kept as commented-out blocks.
-      When the Vulkan fix lands, bump llama_cpp_ref and re-add Gemma 4:
+      bugs (ggml-org/llama.cpp#23057, #23241). There is no build that
+      supports gemma4 and working Vulkan on the O6's Mali G720. Gemma 4
+      models were removed from models.toml rather than kept as commented-out
+      blocks. When the Vulkan fixes land, bump llama_cpp_ref and re-add:
         gemma-4-31b: unsloth/gemma-4-31B-it-GGUF (gemma-4-31B-it-Q4_K_M.gguf)
         gemma-4-26b-a4b: unsloth/gemma-4-26B-A4B-it-GGUF (gemma-4-26B-A4B-it-UD-Q4_K_M.gguf)
-    revisit_when: "ggml-org/llama.cpp#21483 is resolved"
+    revisit_when: "ggml-org/llama.cpp#23057 and #23241 are both resolved"
     match: ["models.toml"]
 
   - decision: "Hardware detection is passive, not prescriptive"

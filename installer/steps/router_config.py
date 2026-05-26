@@ -85,3 +85,4 @@ class RouterConfigStep(Step):
         self.sh(f"chmod 0644 {MODELS_INI}")
         print(f"   Wrote {MODELS_INI} ({len(self.config.models)} models, "
               f"{sum(len(m.profiles) for m in self.config.models)} profiles)")
+        self.sh("systemctl try-restart llama-router.service")
